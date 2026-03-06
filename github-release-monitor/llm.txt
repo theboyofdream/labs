@@ -1,0 +1,115 @@
+# Release Monitor - LLM Context
+
+This file provides context for AI/LLM systems working with this project.
+
+## Project Overview
+
+Release Monitor is a single-page web application for tracking GitHub releases across multiple repositories. It's built with vanilla HTML, CSS, and JavaScript - no frameworks or build tools required.
+
+## Architecture
+
+### Frontend Structure
+- **Single HTML file**: `index.html` contains all code
+- **Vanilla JavaScript**: No external dependencies except Google Fonts
+- **CSS Variables**: Theme system with light/dark mode support
+- **Local Storage**: Persists user preferences and repository list
+
+### Key Components
+
+#### Data Management
+- `repositories`: Array of repository strings in "owner/repo" format
+- `releaseCache`: Cached GitHub API responses
+- `localStorage`: Persists user data between sessions
+
+#### UI Components
+- Repository cards with expand/collapse functionality
+- Release rows with metadata (tag, date, commit, assets)
+- Search interface with fuzzy matching
+- Theme switcher (auto/light/dark)
+- Modal for repository management
+
+#### API Integration
+- GitHub Releases API: `https://api.github.com/repos/{owner}/{repo}/releases`
+- No authentication required (public repositories)
+- Rate limited but sufficient for personal use
+
+## File Structure
+
+```
+github-release-monitor/
+├── index.html          # Main application (HTML + CSS + JS)
+├── README.md           # Documentation
+├── llm.txt            # This file
+├── robots.txt         # SEO directives
+├── project.toml       # Deployment metadata
+└── .gitignore        # Git ignore rules
+```
+
+## Key Functions
+
+### Core Functions
+- `fetchReleases(repo)`: Fetches releases from GitHub API
+- `buildReleaseRows(data, query)`: Renders release list with search
+- `renderMain()`: Main UI rendering function
+- `fuzzyScore(haystack, needle)`: Search scoring algorithm
+
+### UI Functions
+- `renderChips()`: Repository selection chips
+- `renderModalList()`: Repository management modal
+- `applyTheme()`: Theme management
+- `saveRepos()`: Persists repository list
+
+## Styling System
+
+### CSS Variables
+- `--bg`: Background color
+- `--surface`: Card/panel backgrounds
+- `--text`: Primary text color
+- `--text-2`: Secondary text color
+- `--text-3`: Tertiary/muted text color
+- `--mono`: Monospace font family
+- `--sans`: Sans-serif font family
+
+### Theme Support
+- Auto: Respects system preference
+- Light: Forced light mode
+- Dark: Forced dark mode with improved contrast
+
+## Performance Optimizations
+
+- Non-blocking font loading with preload
+- Efficient DOM updates
+- Local caching for API responses
+- Minimal external dependencies
+- Optimized search with fuzzy scoring
+
+## Accessibility Features
+
+- Semantic HTML structure
+- High contrast ratios (WCAG AA compliant)
+- Keyboard navigation support
+- Screen reader friendly
+- Responsive design
+
+## Deployment Notes
+
+- Static site hosting compatible
+- No server-side requirements
+- Works on GitHub Pages, Netlify, Vercel, etc.
+- CORS handled by GitHub API
+
+## Security Considerations
+
+- No user data sent to external servers
+- All data stored locally in browser
+- GitHub API calls are read-only
+- No authentication tokens required
+
+## Browser Compatibility
+
+Modern browsers with ES6+ support:
+- CSS Grid and Flexbox
+- CSS custom properties
+- Async/await JavaScript
+- Fetch API
+- Local Storage API

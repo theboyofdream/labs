@@ -1,0 +1,1259 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Monitor GitHub releases from multiple repositories. Track latest releases, view release notes, and stay updated with your favorite open source projects in one clean interface." />
+    <title>Release Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@200;300;400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@200;300;400;500;600&display=swap"></noscript>
+    <style>
+      :root {
+        --bg: #f0ede8;
+        --bg-deep: #e8e4de;
+        --surface: #dedad3;
+        --surface2: #d3cec6;
+        --line: #c8c2b8;
+        --text: #1a1a1a;
+        --text-2: #404040;
+        --text-3: #666666;
+        --mono: "DM Mono", monospace;
+        --sans: "DM Sans", sans-serif;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          --bg: #0e0e0e;
+          --bg-deep: #111111;
+          --surface: #1a1a1a;
+          --surface2: #232323;
+          --line: #2a2a2a;
+          --text: #f0f0f0;
+          --text-2: #c0c0c0;
+          --text-3: #888888;
+        }
+      }
+
+      [data-theme="dark"] {
+        --bg: #0e0e0e;
+        --bg-deep: #111111;
+        --surface: #1a1a1a;
+        --surface2: #232323;
+        --line: #2a2a2a;
+        --text: #f0f0f0;
+        --text-2: #c0c0c0;
+        --text-3: #888888;
+      }
+
+      [data-theme="light"] {
+        --bg: #f0ede8;
+        --bg-deep: #e8e4de;
+        --surface: #dedad3;
+        --surface2: #d3cec6;
+        --line: #c8c2b8;
+        --text: #1a1a1a;
+        --text-2: #404040;
+        --text-3: #666666;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        outline: none;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        padding: 0;
+        transition:
+          background 0.3s,
+          color 0.3s;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ─── LAYOUT ──────────────────────────────────────────── */
+
+      .shell {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 4rem 2rem 8rem;
+      }
+
+      /* ─── HEADER ──────────────────────────────────────────── */
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 6rem;
+      }
+
+      .wordmark {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+      }
+
+      .wordmark-title {
+        font-family: var(--mono);
+        font-size: 0.65rem;
+        font-weight: 400;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: var(--text-3);
+      }
+
+      .wordmark-sub {
+        font-size: 1.4rem;
+        font-weight: 200;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        line-height: 1;
+      }
+
+      .wordmark-sub strong {
+        font-weight: 600;
+      }
+
+      .nav-cluster {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        padding-top: 0.4rem;
+      }
+
+      .btn {
+        font-family: var(--mono);
+        font-size: 0.6rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 400;
+        color: var(--text-2);
+        background: var(--surface);
+        padding: 0.55rem 1.1rem;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
+        white-space: nowrap;
+      }
+
+      .btn:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+
+      .btn-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .theme-dot {
+        width: 6px;
+        height: 6px;
+        background: var(--text-2);
+        border-radius: 50%;
+        flex-shrink: 0;
+        transition: background 0.2s;
+      }
+
+      /* ─── CONTROLS ────────────────────────────────────────── */
+
+      .controls {
+        margin-top: 2rem;
+        margin-bottom: 5rem;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: start;
+        gap: 2rem;
+      }
+
+      .group {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 0.55rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--text-3);
+      }
+
+      .control-input {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        background: var(--surface);
+        color: var(--text);
+        padding: 0.7rem 0.9rem;
+        letter-spacing: 0.04em;
+        transition: background 0.15s;
+        width: 100%;
+      }
+
+      .control-input::placeholder {
+        color: var(--text-3);
+      }
+
+      .control-input:focus {
+        background: var(--surface2);
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .chip {
+        font-family: var(--mono);
+        font-size: 0.65rem;
+        letter-spacing: 0.05em;
+        padding: 0.45rem 0.9rem;
+        background: var(--surface);
+        color: var(--text-2);
+        cursor: pointer;
+        transition: all 0.15s;
+        user-select: none;
+      }
+
+      .chip input {
+        display: none;
+      }
+
+      .chip:has(input:checked) {
+        background: var(--text);
+        color: var(--bg);
+      }
+
+      .chip:not(:has(input:checked)):hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+
+      .limit-group {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      .stepper {
+        display: flex;
+        align-items: center;
+        gap: 0;
+      }
+
+      .stepper-btn {
+        font-family: var(--mono);
+        font-size: 0.9rem;
+        width: 36px;
+        height: 36px;
+        background: var(--surface);
+        color: var(--text-2);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+        line-height: 1;
+        padding-bottom: 1px;
+      }
+
+      .stepper-btn:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+
+      .stepper-val {
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        width: 52px;
+        text-align: center;
+        color: var(--text);
+        /* background: var(--bg-deep); */
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* ─── MAIN CARDS ──────────────────────────────────────── */
+
+      #main-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .repo-card {
+        background: var(--surface);
+        padding: 0 1.75rem;
+        margin-bottom: 0.5rem;
+        transition: background 0.2s;
+      }
+
+      .repo-card + .repo-card .repo-header {
+        margin-top: -1px;
+      }
+
+      .repo-header {
+        padding: 1.5rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: padding 0.2s;
+        user-select: none;
+      }
+
+      .repo-left {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+      }
+
+      .repo-name-and-latest {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+      }
+
+      .repo-owner {
+        font-family: var(--mono);
+        font-size: 0.55rem;
+        letter-spacing: 0.15em;
+        color: var(--text-3);
+        text-transform: uppercase;
+      }
+
+      .repo-name {
+        font-size: 0.95rem;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        color: var(--text);
+      }
+
+      .repo-latest {
+        font-family: var(--mono);
+        font-size: 0.65rem;
+        color: var(--text-3);
+        font-weight: 400;
+      }
+
+      .expand-hint {
+        font-family: var(--mono);
+        font-size: 0.5rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--text-3);
+        transition:
+          color 0.15s,
+          transform 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .expand-arrow {
+        display: inline-block;
+        font-size: 0.6rem;
+        transition: transform 0.2s;
+      }
+
+      .repo-card.expanded .expand-arrow {
+        transform: rotate(180deg);
+      }
+
+      .repo-card.expanded .expand-hint {
+        color: var(--text-2);
+      }
+
+      .repo-content {
+        display: none;
+        padding-bottom: 1.5rem;
+        margin: 0 -1.75rem;
+      }
+
+      .repo-card.expanded .repo-content {
+        display: block;
+      }
+
+      /* ─── RELEASE ROWS ────────────────────────────────────── */
+
+      .release-row {
+        padding: 1.5rem 1rem;
+        margin: 0 1.75rem;
+        background: var(--bg);
+        margin-bottom: 2px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2rem;
+        align-items: center;
+        transition: background 0.15s;
+        cursor: pointer;
+      }
+
+      .release-row:hover {
+        background: var(--bg-deep);
+      }
+
+      .release-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .rel-tag {
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text);
+        letter-spacing: 0.02em;
+      }
+
+      .rel-date {
+        font-family: var(--mono);
+        font-size: 0.58rem;
+        color: var(--text-3);
+        letter-spacing: 0.05em;
+        margin-top: 0.4rem;
+      }
+
+      .rel-open-btn {
+        font-family: var(--mono);
+        font-size: 0.55rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 400;
+        color: var(--text-2);
+        background: var(--surface);
+        padding: 0.45rem 0.85rem;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s;
+        white-space: nowrap;
+        margin-top: 0.4rem;
+      }
+
+      .rel-open-btn:hover {
+        background: var(--surface2);
+        color: var(--text);
+      }
+
+      .rel-meta {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+      }
+
+      .rel-meta-item {
+        font-family: var(--mono);
+        font-size: 0.6rem;
+        color: var(--text-3);
+        text-align: right;
+        line-height: 1.5;
+      }
+
+      .rel-meta-item .val {
+        display: block;
+        font-size: 0.72rem;
+        color: var(--text-2);
+        font-weight: 500;
+      }
+
+      /* ─── EMPTY / LOADING ─────────────────────────────────── */
+
+      .state-msg {
+        font-family: var(--mono);
+        font-size: 0.6rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--text-3);
+        padding: 1.5rem 1.75rem;
+        background: var(--surface);
+      }
+
+      /* ─── EMPTY ZERO STATE ────────────────────────────────── */
+
+      .zero-state {
+        padding: 5rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .zero-state .big {
+        font-size: 2rem;
+        font-weight: 200;
+        color: var(--text-3);
+        letter-spacing: -0.02em;
+      }
+
+      .zero-state .sub {
+        font-family: var(--mono);
+        font-size: 0.58rem;
+        color: var(--text-3);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      /* ─── MODAL ───────────────────────────────────────────── */
+
+      #modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 100;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+      }
+
+      .modal-box {
+        width: 100%;
+        max-width: 480px;
+        background: var(--bg);
+        padding: 3rem;
+        box-shadow: 0 40px 80px rgba(0, 0, 0, 0.3);
+        animation: modal-in 0.2s ease;
+      }
+
+      @keyframes modal-in {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .modal-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2.5rem;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .modal-title {
+        font-size: 0.95rem;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+
+      .modal-sub {
+        font-family: var(--mono);
+        font-size: 0.55rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--text-3);
+        margin-top: 0.2rem;
+      }
+
+      .input-row {
+        display: flex;
+        gap: 0.4rem;
+        margin-bottom: 2rem;
+      }
+
+      input[type="text"] {
+        flex: 1;
+        font-family: var(--mono);
+        font-size: 0.75rem;
+        background: var(--surface);
+        color: var(--text);
+        padding: 0.75rem 1rem;
+        letter-spacing: 0.04em;
+        transition: background 0.15s;
+      }
+
+      input[type="text"]::placeholder {
+        color: var(--text-3);
+      }
+      input[type="text"]:focus {
+        background: var(--surface2);
+      }
+
+      .modal-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .modal-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.85rem 1rem;
+        background: var(--surface);
+        font-family: var(--mono);
+        font-size: 0.7rem;
+        color: var(--text-2);
+        transition: background 0.15s;
+      }
+
+      .modal-item:hover {
+        background: var(--surface2);
+      }
+
+      .del-btn {
+        font-family: var(--mono);
+        font-size: 0.55rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-3);
+        background: none;
+        cursor: pointer;
+        padding: 0.25rem 0;
+        transition: color 0.15s;
+      }
+
+      .del-btn:hover {
+        color: var(--text);
+        background: none;
+      }
+
+      /* ─── SCROLLBAR ───────────────────────────────────────── */
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--line);
+      }
+
+      /* Slightly heavier in dark mode for legibility */
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) body {
+          font-weight: 400;
+        }
+        :root:not([data-theme="light"]) .wordmark-sub,
+        :root:not([data-theme="light"]) .zero-state .big {
+          font-weight: 300;
+        }
+      }
+
+      [data-theme="dark"] body {
+        font-weight: 400;
+      }
+      [data-theme="dark"] .wordmark-sub,
+      [data-theme="dark"] .zero-state .big {
+        font-weight: 300;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div class="wordmark">
+          <span class="wordmark-title">Release Monitor</span>
+          <div class="wordmark-sub">what just <strong>shipped</strong></div>
+        </div>
+        <div class="nav-cluster">
+          <button class="btn" id="manage-btn">add sources</button>
+          <button class="btn btn-pill" id="theme-btn">
+            <span class="theme-dot" id="theme-dot"></span>
+            <span id="theme-label">auto</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="group">
+        <span class="eyebrow">search releases</span>
+        <input
+          type="text"
+          id="release-search"
+          class="control-input"
+          placeholder="e.g. *next* v18 rc1"
+          autocomplete="off"
+        />
+      </div>
+      <div class="controls">
+        <!-- <div class="filter-group"> -->
+        <div class="group">
+          <span class="eyebrow">watching</span>
+          <div id="chips-container" class="chips"></div>
+        </div>
+        <!-- <div class="limit-group"> -->
+        <div class="group">
+          <span class="eyebrow">depth</span>
+          <div class="stepper">
+            <button class="stepper-btn" id="dec-btn">−</button>
+            <div class="stepper-val" id="limit-display">3</div>
+            <button class="stepper-btn" id="inc-btn">+</button>
+          </div>
+        </div>
+      </div>
+
+      <main id="main-content"></main>
+    </div>
+
+    <!-- MODAL -->
+    <div id="modal">
+      <div class="modal-box">
+        <div class="modal-head">
+          <div>
+            <div class="modal-title">Sources</div>
+            <div class="modal-sub">drop a github link or owner/repo</div>
+          </div>
+          <div class="modal-actions">
+            <input
+              type="file"
+              id="import-file"
+              accept=".txt,text/plain"
+              style="display: none"
+            />
+            <button class="btn" id="import-btn">import</button>
+            <button class="btn" id="export-btn">export</button>
+            <button class="btn" id="close-modal">done</button>
+          </div>
+        </div>
+        <div class="input-row">
+          <input
+            type="text"
+            id="repo-input"
+            placeholder="e.g. vercel/next.js"
+          />
+          <button class="btn" id="add-repo-btn">track it</button>
+        </div>
+        <div class="modal-list" id="modal-repo-list"></div>
+      </div>
+    </div>
+
+    <script>
+      // ─── THEME ────────────────────────────────────────────
+      const THEMES = ["auto", "light", "dark"];
+      let themeIdx = parseInt(localStorage.getItem("rm_theme_idx") || "0");
+
+      function applyTheme() {
+        const t = THEMES[themeIdx];
+        const root = document.documentElement;
+        const label = document.getElementById("theme-label");
+        const dot = document.getElementById("theme-dot");
+
+        if (t === "auto") {
+          root.removeAttribute("data-theme");
+        } else {
+          root.setAttribute("data-theme", t);
+        }
+
+        label.textContent = t;
+
+        // dot color based on resolved theme
+        const isDark =
+          t === "dark" ||
+          (t === "auto" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+        dot.style.background = isDark ? "#777" : "#aaa";
+
+        localStorage.setItem("rm_theme_idx", themeIdx);
+      }
+
+      // Sync with system changes when on auto
+      window
+        .matchMedia("(prefers-color-scheme: dark)")
+        .addEventListener("change", () => {
+          if (THEMES[themeIdx] === "auto") applyTheme();
+        });
+
+      document.getElementById("theme-btn").addEventListener("click", () => {
+        themeIdx = (themeIdx + 1) % THEMES.length;
+        applyTheme();
+      });
+
+      applyTheme();
+
+      // ─── STATE ────────────────────────────────────────────
+      const STORAGE_KEY = "gh_registry_v2_repos";
+      let repositories = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      let releaseCache = {};
+      let limit = 3;
+      let searchQuery = "";
+
+      const LIMIT_OPTS = [1, 3, 5, 10, 20];
+      let limitIdx = 1; // default = 3
+
+      const mainContent = document.getElementById("main-content");
+      const chipsContainer = document.getElementById("chips-container");
+      const limitDisplay = document.getElementById("limit-display");
+      const modal = document.getElementById("modal");
+      const repoInput = document.getElementById("repo-input");
+      const modalRepoList = document.getElementById("modal-repo-list");
+      const releaseSearch = document.getElementById("release-search");
+      const importBtn = document.getElementById("import-btn");
+      const exportBtn = document.getElementById("export-btn");
+      const importFile = document.getElementById("import-file");
+
+      function rerenderExpandedCards() {
+        document.querySelectorAll(".repo-card.expanded").forEach((card) => {
+          const repo = card.dataset.repo;
+          const content = card.querySelector(".repo-content");
+          const cached = releaseCache[repo];
+          if (cached) content.innerHTML = buildReleaseRows(cached, searchQuery);
+        });
+      }
+
+      releaseSearch.addEventListener("input", () => {
+        searchQuery = releaseSearch.value || "";
+        // repo filtering + release filtering in one query
+        renderMain();
+        rerenderExpandedCards();
+      });
+
+      function matchToken(hay, token) {
+        const h = (hay || "").toLowerCase();
+        const t = (token || "").toLowerCase();
+        if (!t) return true;
+        if (!h) return false;
+
+        // Simple glob support: "*" matches any sequence
+        if (t.includes("*")) {
+          const escaped = t.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
+          try {
+            return new RegExp(`^${escaped}$`, "i").test(h) || new RegExp(escaped, "i").test(h);
+          } catch {
+            // fall back to substring if regex fails
+            return h.includes(t.replace(/\*/g, ""));
+          }
+        }
+
+        return h.includes(t);
+      }
+
+      function matchAllTokens(hay, query) {
+        const q = (query || "").trim();
+        if (!q) return true;
+        const tokens = q.split(/\s+/).filter(Boolean);
+        return tokens.every((tok) => matchToken(hay, tok));
+      }
+
+      // (repo search uses the same releaseSearch input)
+
+      // ─── RELEASE ROWS RENDERER ────────────────────────────
+      function buildReleaseRows(data, query = "") {
+        const q = (query || "").trim();
+        let rows = data;
+        if (q) {
+          const scored = data
+            .map((rel) => {
+              const sha = rel.target_commitish?.substring(0, 7) || "";
+              const hay = `${rel.tag_name || ""} ${sha}`.toLowerCase();
+              const score = fuzzyScore(hay, q.toLowerCase());
+              return { rel, score };
+            })
+            .filter((x) => x.score !== null)
+            .sort((a, b) => b.score - a.score)
+            .map((x) => x.rel);
+          rows = scored;
+        }
+
+        rows = rows.slice(0, limit);
+        if (!rows.length) return `<div class="state-msg">no releases found</div>`;
+        return rows
+          .map((rel) => {
+            const size = rel.assets.reduce((a, b) => a + b.size, 0);
+            const date = new Date(rel.published_at).toLocaleDateString(
+              undefined,
+              { month: "short", day: "numeric", year: "numeric" },
+            );
+            const mb =
+              size > 0 ? (size / 1024 / 1024).toFixed(2) + " MB" : "\u2014";
+            const sha = rel.target_commitish?.substring(0, 7) || "\u2014";
+            return `
+            <div class="release-row" onclick="window.open('${rel.html_url}', '_blank')">
+              <div>
+                <div class="rel-tag">${rel.tag_name}</div>
+                <div class="rel-date">${date}</div>
+                <button class="rel-open-btn" onclick="event.stopPropagation(); window.open('${rel.html_url}', '_blank')">open</button>
+              </div>
+              <div class="rel-meta">
+                <div class="rel-meta-item"><span>commit</span><span class="val">${sha}</span></div>
+                <div class="rel-meta-item"><span>assets</span><span class="val">${mb}</span></div>
+              </div>
+            </div>`;
+          })
+          .join("");
+      }
+
+      // Returns higher score for better match, or null for no match.
+      function fuzzyScore(haystack, needle) {
+        const h = (haystack || "").toLowerCase();
+        const n = (needle || "").toLowerCase();
+        if (!n) return 0;
+        if (!h) return null;
+
+        let hi = 0;
+        let score = 0;
+        let consecutive = 0;
+        let firstMatch = -1;
+
+        for (let ni = 0; ni < n.length; ni++) {
+          const ch = n[ni];
+          let foundAt = -1;
+          for (let j = hi; j < h.length; j++) {
+            if (h[j] === ch) {
+              foundAt = j;
+              break;
+            }
+          }
+          if (foundAt === -1) return null;
+          if (firstMatch === -1) firstMatch = foundAt;
+
+          if (foundAt === hi) {
+            consecutive++;
+            score += 10 + consecutive * 2;
+          } else {
+            consecutive = 0;
+            score += 6;
+            const gap = foundAt - hi;
+            score -= Math.min(6, gap);
+          }
+
+          // Word boundary / separator bonus
+          const prev = foundAt > 0 ? h[foundAt - 1] : "";
+          if (foundAt === 0 || prev === "/" || prev === "-" || prev === "_" || prev === " ")
+            score += 4;
+
+          hi = foundAt + 1;
+        }
+
+        // Earlier matches are better
+        score -= Math.min(10, firstMatch);
+        return score;
+      }
+
+      // ─── LIMIT STEPPER ────────────────────────────────────
+      async function updateLimit() {
+        limit = LIMIT_OPTS[limitIdx];
+        limitDisplay.textContent = limit;
+
+        // Refresh all cards with their current expanded state preserved
+        document.querySelectorAll(".repo-card").forEach((card) => {
+          const isExpanded = card.classList.contains("expanded");
+          const owner = card.querySelector(".repo-owner").textContent;
+          const name = card.querySelector(".repo-name").textContent;
+          const repo = `${owner}/${name}`;
+          const content = card.querySelector(".repo-content");
+
+          if (isExpanded) {
+            const cached = releaseCache[repo];
+            if (cached) {
+              content.innerHTML = buildReleaseRows(cached, searchQuery);
+            } else {
+              content.innerHTML = `<div class="state-msg">pulling data\u2026</div>`;
+              fetchReleases(repo).then((data) => {
+                content.innerHTML = data
+                  ? buildReleaseRows(data, searchQuery)
+                  : `<div class="state-msg">could not reach github</div>`;
+              });
+            }
+          }
+        });
+      }
+
+      document.getElementById("inc-btn").addEventListener("click", () => {
+        if (limitIdx < LIMIT_OPTS.length - 1) {
+          limitIdx++;
+          updateLimit();
+        }
+      });
+      document.getElementById("dec-btn").addEventListener("click", () => {
+        if (limitIdx > 0) {
+          limitIdx--;
+          updateLimit();
+        }
+      });
+
+      // ─── REPOS ────────────────────────────────────────────
+      function saveRepos() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(repositories));
+        renderChips();
+        renderMain();
+      }
+
+      function parseRepo(input) {
+        const clean = input.trim();
+        if (!clean) return null;
+        const match = clean.match(/github\.com\/([^/]+\/[^/\s?#]+)/i);
+        if (match) return match[1];
+        if (/^[^/]+\/[^/]+$/.test(clean)) return clean;
+        return null;
+      }
+
+      function importReposFromText(txt) {
+        const lines = (txt || "")
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter(Boolean);
+
+        let added = 0;
+        for (const line of lines) {
+          const val = parseRepo(line);
+          if (val && !repositories.includes(val)) {
+            repositories.push(val);
+            added++;
+          }
+        }
+
+        if (added > 0) {
+          saveRepos();
+          renderModalList();
+        }
+      }
+
+      function exportReposToFile() {
+        const body = repositories.map((r) => `https://github.com/${r}`).join("\n");
+        const blob = new Blob([body + (body ? "\n" : "")], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "release-monitor-sources.txt";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+      }
+
+      async function fetchReleases(repo) {
+        if (releaseCache[repo]) return releaseCache[repo];
+        try {
+          const res = await fetch(
+            `https://api.github.com/repos/${repo}/releases`,
+          );
+          if (!res.ok) throw new Error();
+          const data = await res.json();
+          releaseCache[repo] = data;
+          return data;
+        } catch {
+          return null;
+        }
+      }
+
+      // ─── CHIPS ────────────────────────────────────────────
+      function renderChips() {
+        chipsContainer.innerHTML = "";
+        if (!repositories.length) {
+          chipsContainer.innerHTML = `<span style="font-family:var(--mono);font-size:0.6rem;color:var(--text-3);letter-spacing:0.1em;">no sources yet — add some →</span>`;
+          return;
+        }
+        repositories.forEach((repo) => {
+          const label = document.createElement("label");
+          label.className = "chip";
+          const [owner, name] = repo.split("/");
+          label.innerHTML = `<input type="checkbox" value="${repo}"> ${name}`;
+          label.querySelector("input").addEventListener("change", renderMain);
+          chipsContainer.appendChild(label);
+        });
+      }
+
+      // ─── MODAL LIST ───────────────────────────────────────
+      function renderModalList() {
+        modalRepoList.innerHTML = "";
+        repositories.forEach((repo, idx) => {
+          const item = document.createElement("div");
+          item.className = "modal-item";
+          item.innerHTML = `<span>${repo}</span><button class="del-btn">remove</button>`;
+          item.querySelector(".del-btn").addEventListener("click", () => {
+            repositories.splice(idx, 1);
+            saveRepos();
+            renderModalList();
+          });
+          modalRepoList.appendChild(item);
+        });
+      }
+
+      // ─── MAIN RENDER ──────────────────────────────────────
+      async function renderMain() {
+        const selected = Array.from(
+          document.querySelectorAll(".chip input:checked"),
+        ).map((i) => i.value);
+
+        // Store current expanded states before re-rendering
+        const expandedStates = new Set();
+        document.querySelectorAll(".repo-card.expanded").forEach((card) => {
+          expandedStates.add(card.dataset.repo);
+        });
+
+        mainContent.innerHTML = "";
+
+        if (!selected.length) {
+          mainContent.innerHTML = `
+            <div class="zero-state">
+              <div class="big">nothing selected</div>
+              <div class="sub">pick a source above or add new ones</div>
+            </div>`;
+          return;
+        }
+
+        selected
+          .filter((repo) => {
+            const cached = releaseCache[repo];
+            const cachedTag = cached && cached.length > 0 ? cached[0].tag_name : "";
+            const hay = `${repo} ${cachedTag}`;
+            return matchAllTokens(hay, searchQuery);
+          })
+          .forEach(async (repo) => {
+          const [owner, name] = repo.split("/");
+          const card = document.createElement("section");
+          const wasExpanded = expandedStates.has(repo);
+          card.className = `repo-card${wasExpanded ? " expanded" : ""}`;
+
+          // Get latest release for header
+          let latestVersion = "";
+          const cached = releaseCache[repo];
+          if (cached && cached.length > 0) {
+            latestVersion = cached[0].tag_name;
+          } else {
+            // Fetch latest release if not cached
+            try {
+              const data = await fetchReleases(repo);
+              if (data && data.length > 0) {
+                latestVersion = data[0].tag_name;
+              }
+            } catch {
+              // Silently fail if can't fetch
+            }
+          }
+
+          card.innerHTML = `
+            <div class="repo-header">
+              <div class="repo-left">
+                <span class="repo-owner">${owner}</span>
+                <div class="repo-name-and-latest">
+                  <span class="repo-name">${name}</span>
+                  ${latestVersion ? `<span class="repo-latest">${latestVersion}</span>` : ""}
+                </div>
+              </div>
+              <span class="expand-hint">
+                ${wasExpanded ? "collapse " : "view releases "}
+                <span class="expand-arrow">↓</span>
+              </span>
+            </div>
+            <div class="repo-content"></div>
+          `;
+          card.dataset.repo = repo;
+          card.dataset.expanded = wasExpanded.toString();
+
+          card
+            .querySelector(".repo-header")
+            .addEventListener("click", async () => {
+              const isExpanded = card.classList.toggle("expanded");
+              card.dataset.expanded = isExpanded.toString();
+              const hint = card.querySelector(".expand-hint");
+              hint.childNodes[0].textContent = isExpanded
+                ? "collapse "
+                : "view releases ";
+
+              if (isExpanded) {
+                const content = card.querySelector(".repo-content");
+                content.innerHTML = `<div class="state-msg">pulling data…</div>`;
+                const data = await fetchReleases(repo);
+                if (!data) {
+                  content.innerHTML = `<div class="state-msg">could not reach github</div>`;
+                  return;
+                }
+                content.innerHTML = buildReleaseRows(data, searchQuery);
+              }
+            });
+
+          mainContent.appendChild(card);
+
+          // If card was expanded, load its content
+          if (wasExpanded) {
+            const content = card.querySelector(".repo-content");
+            const cached = releaseCache[repo];
+            if (cached) {
+              content.innerHTML = buildReleaseRows(cached, searchQuery);
+            } else {
+              content.innerHTML = `<div class="state-msg">pulling data…</div>`;
+              fetchReleases(repo).then((data) => {
+                content.innerHTML = data
+                  ? buildReleaseRows(data, searchQuery)
+                  : `<div class="state-msg">could not reach github</div>`;
+              });
+            }
+          }
+        });
+      }
+
+      // ─── EVENTS ───────────────────────────────────────────
+      document.getElementById("manage-btn").addEventListener("click", () => {
+        renderModalList();
+        modal.style.display = "flex";
+      });
+
+      importBtn.addEventListener("click", () => {
+        importFile.value = "";
+        importFile.click();
+      });
+
+      importFile.addEventListener("change", async () => {
+        const f = importFile.files && importFile.files[0];
+        if (!f) return;
+        try {
+          const txt = await f.text();
+          importReposFromText(txt);
+        } catch {
+          // ignore
+        }
+      });
+
+      exportBtn.addEventListener("click", () => {
+        exportReposToFile();
+      });
+
+      document.getElementById("close-modal").addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) modal.style.display = "none";
+      });
+
+      document.getElementById("add-repo-btn").addEventListener("click", () => {
+        const val = parseRepo(repoInput.value);
+        if (val && !repositories.includes(val)) {
+          repositories.push(val);
+          repoInput.value = "";
+          saveRepos();
+          renderModalList();
+        }
+      });
+
+      repoInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.getElementById("add-repo-btn").click();
+      });
+
+      // ─── INIT ─────────────────────────────────────────────
+      renderChips();
+    </script>
+  </body>
+</html>

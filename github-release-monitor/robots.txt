@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Sitemap location (if applicable)
+# Sitemap: https://yourdomain.com/sitemap.xml
+
+# Block unnecessary files
+Disallow: /*.txt$
+Disallow: /llm.txt
+Disallow: /project.toml
+
+# Allow important files
+Allow: /index.html
+Allow: /README.md

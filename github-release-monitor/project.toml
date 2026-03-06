@@ -1,0 +1,10 @@
+[project]
+name = "Release Monitor"
+description = "Monitor GitHub releases from multiple repositories in one clean interface"
+version = "1.0.0"
+license = "MIT"
+homepage = "https://github.com/yourusername/github-release-monitor"
+
+categories = ["development-tools", "git-tools", "productivity", "monitoring"]
+
+tags = ["github", "releases", "monitoring", "developer-tools", "git", "open-source", "productivity", "dashboard", "tracker", "html5", "css3", "javascript", "vanilla-js", "github-api", "dark-mode", "search", "filter", "responsive", "local-storage"]
