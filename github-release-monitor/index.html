@@ -736,15 +736,24 @@
             <button class="btn" id="close-modal">done</button>
           </div>
         </div>
-        <div class="input-row">
-          <input
-            type="text"
-            id="repo-input"
-            placeholder="e.g. vercel/next.js"
-          />
-          <button class="btn" id="add-repo-btn">track it</button>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div style="display: flex; flex-direction: column; flex: 1;">
+            <textarea
+              id="repo-input"
+              placeholder="e.g. vercel/next.js&#10;facebook/react&#10;tailwindlabs/tailwindcss"
+              style="font-family: var(--mono); font-size: 0.75rem; background: var(--surface); color: var(--text); padding: 0.75rem 1rem; letter-spacing: 0.04em; transition: background 0.15s; border: none; resize: vertical; min-height: 60px;"
+              rows="3"
+            ></textarea>
+            <div style="font-family: var(--mono); font-size: 0.55rem; color: var(--text-3); margin-top: 0.5rem; letter-spacing: 0.05em;">
+              💡 Add multiple repositories, one per line. Supports GitHub URLs or owner/repo format.
+            </div>
+          </div>
+          <button class="btn" id="add-repo-btn" style="width: 100%; margin-bottom: 1rem;">track them</button>
         </div>
-        <div class="modal-list" id="modal-repo-list"></div>
+        <div class="modal-list" id="modal-repo-list" style="max-height: 200px; overflow-y: auto;"></div>
+        <div style="font-family: var(--mono); font-size: 0.55rem; color: var(--text-3); text-align: center; margin-top: 0.5rem; letter-spacing: 0.05em;" id="repo-count">
+          0 repositories
+        </div>
       </div>
     </div>
 
@@ -817,7 +826,7 @@
           const repo = card.dataset.repo;
           const content = card.querySelector(".repo-content");
           const cached = releaseCache[repo];
-          if (cached) content.innerHTML = buildReleaseRows(cached, searchQuery);
+          if (cached) content.innerHTML = buildReleaseRows(cached, searchQuery, repo);
         });
       }
 
@@ -858,22 +867,33 @@
       // (repo search uses the same releaseSearch input)
 
       // ─── RELEASE ROWS RENDERER ────────────────────────────
-      function buildReleaseRows(data, query = "") {
+      function buildReleaseRows(data, query = "", repoName = "") {
         const q = (query || "").trim();
+        console.log('DEBUG: buildReleaseRows called with', data.length, 'releases, query:', q, 'repo:', repoName);
         let rows = data;
         if (q) {
-          const scored = data
-            .map((rel) => {
+          // Check if any search token matches the repo name
+          const tokens = q.split(/\s+/).filter(Boolean);
+          const repoMatches = tokens.some((tok) => matchToken(repoName, tok));
+          console.log('DEBUG: Tokens:', tokens, 'RepoMatches:', repoMatches, 'RepoName:', repoName);
+          
+          if (repoMatches) {
+            // If repo matches, show all releases
+            console.log('DEBUG: Repo matches, showing all releases');
+          } else {
+            // Otherwise, filter releases normally
+            console.log('DEBUG: Repo does not match, filtering releases');
+            rows = data.filter((rel) => {
               const sha = rel.target_commitish?.substring(0, 7) || "";
-              const hay = `${rel.tag_name || ""} ${sha}`.toLowerCase();
-              const score = fuzzyScore(hay, q.toLowerCase());
-              return { rel, score };
-            })
-            .filter((x) => x.score !== null)
-            .sort((a, b) => b.score - a.score)
-            .map((x) => x.rel);
-          rows = scored;
+              const hay = `${rel.tag_name || ""} ${sha}`;
+              // Use OR matching for releases too
+              const matches = tokens.some((tok) => matchToken(hay, tok));
+              console.log('DEBUG: Release filter - tag:', rel.tag_name, 'hay:', hay, 'tokens:', tokens, 'matches:', matches);
+              return matches;
+            });
+          }
         }
+        console.log('DEBUG: After filtering, rows count:', rows.length);
 
         rows = rows.slice(0, limit);
         if (!rows.length) return `<div class="state-msg">no releases found</div>`;
@@ -966,12 +986,12 @@
           if (isExpanded) {
             const cached = releaseCache[repo];
             if (cached) {
-              content.innerHTML = buildReleaseRows(cached, searchQuery);
+              content.innerHTML = buildReleaseRows(cached, searchQuery, repo);
             } else {
               content.innerHTML = `<div class="state-msg">pulling data\u2026</div>`;
               fetchReleases(repo).then((data) => {
                 content.innerHTML = data
-                  ? buildReleaseRows(data, searchQuery)
+                  ? buildReleaseRows(data, searchQuery, repo)
                   : `<div class="state-msg">could not reach github</div>`;
               });
             }
@@ -1088,6 +1108,13 @@
           });
           modalRepoList.appendChild(item);
         });
+        
+        // Update repository count
+        const repoCount = document.getElementById("repo-count");
+        if (repoCount) {
+          const count = repositories.length;
+          repoCount.textContent = `${count} ${count === 1 ? 'repository' : 'repositories'}`;
+        }
       }
 
       // ─── MAIN RENDER ──────────────────────────────────────
@@ -1116,9 +1143,23 @@
         selected
           .filter((repo) => {
             const cached = releaseCache[repo];
-            const cachedTag = cached && cached.length > 0 ? cached[0].tag_name : "";
-            const hay = `${repo} ${cachedTag}`;
-            return matchAllTokens(hay, searchQuery);
+            let hay = repo; // Always include repo name in search
+            
+            // Add all release tags to searchable content
+            if (cached && cached.length > 0) {
+              const allTags = cached.map(rel => rel.tag_name).join(' ');
+              hay += ` ${allTags}`;
+            } else {
+              // If no cached data, try to include latest version if available
+              const cachedTag = cached && cached.length > 0 ? cached[0].tag_name : "";
+              if (cachedTag) hay += ` ${cachedTag}`;
+            }
+            
+            // Use OR matching: show repo if ANY token matches
+            const q = (searchQuery || "").trim();
+            if (!q) return true;
+            const tokens = q.split(/\s+/).filter(Boolean);
+            return tokens.some((tok) => matchToken(hay, tok));
           })
           .forEach(async (repo) => {
           const [owner, name] = repo.split("/");
@@ -1180,7 +1221,7 @@
                   content.innerHTML = `<div class="state-msg">could not reach github</div>`;
                   return;
                 }
-                content.innerHTML = buildReleaseRows(data, searchQuery);
+                content.innerHTML = buildReleaseRows(data, searchQuery, repo);
               }
             });
 
@@ -1191,12 +1232,12 @@
             const content = card.querySelector(".repo-content");
             const cached = releaseCache[repo];
             if (cached) {
-              content.innerHTML = buildReleaseRows(cached, searchQuery);
+              content.innerHTML = buildReleaseRows(cached, searchQuery, repo);
             } else {
               content.innerHTML = `<div class="state-msg">pulling data…</div>`;
               fetchReleases(repo).then((data) => {
                 content.innerHTML = data
-                  ? buildReleaseRows(data, searchQuery)
+                  ? buildReleaseRows(data, searchQuery, repo)
                   : `<div class="state-msg">could not reach github</div>`;
               });
             }
@@ -1239,9 +1280,18 @@
       });
 
       document.getElementById("add-repo-btn").addEventListener("click", () => {
-        const val = parseRepo(repoInput.value);
-        if (val && !repositories.includes(val)) {
-          repositories.push(val);
+        const lines = repoInput.value.split('\n').map(line => line.trim()).filter(Boolean);
+        let added = 0;
+        
+        for (const line of lines) {
+          const val = parseRepo(line);
+          if (val && !repositories.includes(val)) {
+            repositories.push(val);
+            added++;
+          }
+        }
+        
+        if (added > 0) {
           repoInput.value = "";
           saveRepos();
           renderModalList();
@@ -1249,7 +1299,10 @@
       });
 
       repoInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") document.getElementById("add-repo-btn").click();
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          document.getElementById("add-repo-btn").click();
+        }
       });
 
       // ─── INIT ─────────────────────────────────────────────
