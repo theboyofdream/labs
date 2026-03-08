@@ -699,7 +699,11 @@
       <div class="controls">
         <!-- <div class="filter-group"> -->
         <div class="group">
-          <span class="eyebrow">watching</span>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="eyebrow">watching</span>
+            <span id="selected-count" style="font-family: var(--mono); font-size: 0.55rem; color: var(--text-3); padding: 0.2rem 0.4rem;">0 out of 0</span>
+            <button id="select-all-btn" class="btn" style="font-size: 0.55rem; padding: 0.2rem 0.4rem; display: none;">select all</button>
+          </div>
           <div id="chips-container" class="chips"></div>
         </div>
         <!-- <div class="limit-group"> -->
@@ -824,12 +828,48 @@
       const exportBtn = document.getElementById("export-btn");
       const importFile = document.getElementById("import-file");
 
+      function updateSelectedCount() {
+        const selected = selectedRepos.length;
+        const total = repositories.length;
+        const countElement = document.getElementById("selected-count");
+        const selectAllBtn = document.getElementById("select-all-btn");
+        
+        if (countElement) {
+          countElement.textContent = `${selected} out of ${total}`;
+        }
+        
+        // Show/hide select all button based on repository count
+        if (selectAllBtn) {
+          if (total === 0) {
+            selectAllBtn.style.display = "none";
+          } else {
+            selectAllBtn.style.display = "inline-block";
+            // Update button text based on current selection
+            if (selected === total) {
+              selectAllBtn.textContent = "unselect all";
+            } else {
+              selectAllBtn.textContent = "select all";
+            }
+          }
+        }
+      }
+
+      function selectAllRepos(select = true) {
+        const checkboxes = document.querySelectorAll(".chip input");
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = select;
+        });
+        saveSelectedRepos();
+        renderMain();
+      }
+
       function saveSelectedRepos() {
         const currentlySelected = Array.from(
           document.querySelectorAll(".chip input:checked"),
         ).map((i) => i.value);
         selectedRepos = currentlySelected;
         localStorage.setItem(SELECTED_REPOS_KEY, JSON.stringify(selectedRepos));
+        updateSelectedCount();
       }
 
       function rerenderExpandedCards() {
@@ -1038,6 +1078,7 @@
         
         localStorage.setItem(STORAGE_KEY, JSON.stringify(repositories));
         renderChips();
+        updateSelectedCount();
       }
 
       function parseRepo(input) {
@@ -1336,9 +1377,17 @@
         }
       });
 
+      // Select/Unselect All functionality
+      document.getElementById("select-all-btn").addEventListener("click", () => {
+        const selected = selectedRepos.length;
+        const total = repositories.length;
+        selectAllRepos(selected !== total);
+      });
+
       // ─── INIT ─────────────────────────────────────────────
       renderChips();
       renderMain();
+      updateSelectedCount();
     </script>
   </body>
 </html>
