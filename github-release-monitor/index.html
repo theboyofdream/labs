@@ -802,8 +802,11 @@
 
       // ─── STATE ────────────────────────────────────────────
       const STORAGE_KEY = "gh_registry_v2_repos";
+      const SELECTED_REPOS_KEY = "gh_registry_v2_selected_repos";
       let repositories = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      let selectedRepos = JSON.parse(localStorage.getItem(SELECTED_REPOS_KEY)) || [];
       let releaseCache = {};
+      let cardReleaseData = {}; // Store release data for expanded cards
       let limit = 3;
       let searchQuery = "";
 
@@ -821,12 +824,23 @@
       const exportBtn = document.getElementById("export-btn");
       const importFile = document.getElementById("import-file");
 
+      function saveSelectedRepos() {
+        const currentlySelected = Array.from(
+          document.querySelectorAll(".chip input:checked"),
+        ).map((i) => i.value);
+        selectedRepos = currentlySelected;
+        localStorage.setItem(SELECTED_REPOS_KEY, JSON.stringify(selectedRepos));
+      }
+
       function rerenderExpandedCards() {
         document.querySelectorAll(".repo-card.expanded").forEach((card) => {
           const repo = card.dataset.repo;
           const content = card.querySelector(".repo-content");
-          const cached = releaseCache[repo];
-          if (cached) content.innerHTML = buildReleaseRows(cached, searchQuery, repo);
+          
+          // Try to get data from cardReleaseData first, then fallback to cache
+          let data = cardReleaseData[repo] || releaseCache[repo];
+          
+          if (data) content.innerHTML = buildReleaseRows(data, searchQuery, repo);
         });
       }
 
@@ -990,9 +1004,13 @@
             } else {
               content.innerHTML = `<div class="state-msg">pulling data\u2026</div>`;
               fetchReleases(repo).then((data) => {
-                content.innerHTML = data
-                  ? buildReleaseRows(data, searchQuery, repo)
-                  : `<div class="state-msg">could not reach github</div>`;
+                if (data) {
+                  // Store data in cardReleaseData to preserve it during re-renders
+                  cardReleaseData[repo] = data;
+                  content.innerHTML = buildReleaseRows(data, searchQuery, repo);
+                } else {
+                  content.innerHTML = `<div class="state-msg">could not reach github</div>`;
+                }
               });
             }
           }
@@ -1014,9 +1032,12 @@
 
       // ─── REPOS ────────────────────────────────────────────
       function saveRepos() {
+        // Clean up selectedRepos to remove repos that no longer exist
+        selectedRepos = selectedRepos.filter(repo => repositories.includes(repo));
+        localStorage.setItem(SELECTED_REPOS_KEY, JSON.stringify(selectedRepos));
+        
         localStorage.setItem(STORAGE_KEY, JSON.stringify(repositories));
         renderChips();
-        renderMain();
       }
 
       function parseRepo(input) {
@@ -1088,8 +1109,12 @@
           const label = document.createElement("label");
           label.className = "chip";
           const [owner, name] = repo.split("/");
-          label.innerHTML = `<input type="checkbox" value="${repo}"> ${name}`;
-          label.querySelector("input").addEventListener("change", renderMain);
+          const isChecked = selectedRepos.includes(repo) ? "checked" : "";
+          label.innerHTML = `<input type="checkbox" value="${repo}" ${isChecked}> ${name}`;
+          label.querySelector("input").addEventListener("change", () => {
+            saveSelectedRepos();
+            renderMain();
+          });
           chipsContainer.appendChild(label);
         });
       }
@@ -1221,6 +1246,8 @@
                   content.innerHTML = `<div class="state-msg">could not reach github</div>`;
                   return;
                 }
+                // Store data in cardReleaseData to preserve it during re-renders
+                cardReleaseData[repo] = data;
                 content.innerHTML = buildReleaseRows(data, searchQuery, repo);
               }
             });
@@ -1236,9 +1263,13 @@
             } else {
               content.innerHTML = `<div class="state-msg">pulling data…</div>`;
               fetchReleases(repo).then((data) => {
-                content.innerHTML = data
-                  ? buildReleaseRows(data, searchQuery, repo)
-                  : `<div class="state-msg">could not reach github</div>`;
+                if (data) {
+                  // Store data in cardReleaseData to preserve it during re-renders
+                  cardReleaseData[repo] = data;
+                  content.innerHTML = buildReleaseRows(data, searchQuery, repo);
+                } else {
+                  content.innerHTML = `<div class="state-msg">could not reach github</div>`;
+                }
               });
             }
           }
@@ -1307,6 +1338,7 @@
 
       // ─── INIT ─────────────────────────────────────────────
       renderChips();
+      renderMain();
     </script>
   </body>
 </html>
