@@ -1,0 +1,92 @@
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+linux/python/
+mac/python/
+
+# ── Virtual environments ───────────────────────────────────────
+venv/
+env/
+ENV/
+.venv
+
+# ── Node / Electron ────────────────────────────────────────────
+node_bin/
+runtime/
+node_modules/
+
+# ── Windows runtime (downloaded on first launch) ───────────────
+windows/node_bin/
+windows/electron/node_modules/
+windows/electron/dist/
+
+# ── Build outputs (all platforms) ─────────────────────────────
+dist/
+windows/build/
+windows/dist/
+mac/build/
+mac/dist/
+linux/build/
+linux/dist/
+
+# ── Installers / packages (don't commit binaries) ─────────────
+*.zip
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+!electron/preload.js
+
+# ── User data ─────────────────────────────────────────────────
+egm_settings.json
+cookies.txt
+
+# ── Dev artifacts ──────────────────────────────────────────────
+electron/run_dev.bat
+electron/build_electron.bat
+.node_version
+
+# ── Secrets ───────────────────────────────────────────────────
+secrets.json
+*.key
+*.pem
+.env
+.env.local
+
+# ── IDE ───────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Logs ──────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Temp ──────────────────────────────────────────────────────
+*.tmp
+temp/
+tmp/
+
+# ── OS ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Icon staging ──────────────────────────────────────────────
+static/icon-new.ico
+
+# ── Internal operational documents (never commit) ─────────────
+STATE.md
+
+# ── Platform JSON feeds (live on egerena-website repo, not here) ──
+egm-version.json
+egm-portable-version.json
+egmac-update.json
+egmlinux-update.json
+_DELETED_FILES.txt

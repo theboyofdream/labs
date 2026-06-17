@@ -1,0 +1,1198 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EGM Downloader API",
+    "description": "REST API for EGM Downloader — a yt-dlp-based media downloader supporting 1000+ sites. Authenticate via the `X-EGM-Token` header (set `EGM_API_TOKEN` env var).",
+    "version": "1.0.5",
+    "contact": {
+      "name": "EGM Downloader",
+      "url": "https://egerena.com/apps/egm.html"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8899",
+      "description": "Local server (bound to loopback only)"
+    }
+  ],
+  "security": [
+    {
+      "ApiTokenAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "ApiTokenAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-EGM-Token",
+        "description": "API token set via EGM_API_TOKEN environment variable"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      },
+      "VideoInfo": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "thumbnail": { "type": "string" },
+          "duration": { "type": "number" },
+          "uploader": { "type": "string" },
+          "formats": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "label": { "type": "string" },
+                "height": { "type": "integer" },
+                "has_audio": { "type": "boolean" },
+                "acodec": { "type": "string" }
+              }
+            }
+          },
+          "audio_formats": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "label": { "type": "string" },
+                "abr": { "type": "number" }
+              }
+            }
+          },
+          "width": { "type": "integer" },
+          "height": { "type": "integer" }
+        }
+      },
+      "PlaylistEntry": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string" },
+          "title": { "type": "string" },
+          "thumbnail": { "type": "string" },
+          "duration": { "type": "number" },
+          "uploader": { "type": "string" }
+        }
+      },
+      "PlaylistResult": {
+        "type": "object",
+        "properties": {
+          "is_playlist": { "type": "boolean" },
+          "playlist_title": { "type": "string" },
+          "entries": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PlaylistEntry" }
+          }
+        }
+      },
+      "DownloadJob": {
+        "type": "object",
+        "properties": {
+          "job_id": { "type": "string" }
+        }
+      },
+      "JobStatus": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "enum": ["queued", "downloading", "converting", "done", "error", "cancelled"] },
+          "error": { "type": "string" },
+          "filename": { "type": "string" },
+          "progress": { "type": "number" },
+          "speed": { "type": "string" },
+          "eta": { "type": "string" },
+          "filesize": { "type": "string" }
+        }
+      },
+      "Settings": {
+        "type": "object",
+        "properties": {
+          "last_folder": { "type": "string" },
+          "concurrency": { "type": "integer" },
+          "fragments": { "type": "integer" },
+          "quit_on_done": { "type": "boolean" },
+          "check_updates_on_launch": { "type": "boolean" },
+          "last_seen_version": { "type": "string" },
+          "subtitles": { "type": "boolean" },
+          "embed_metadata": { "type": "boolean" },
+          "output_format": { "type": "string", "enum": ["mp4", "mkv"] },
+          "default_audio_format": { "type": "string" },
+          "yt_dlp_channel": { "type": "string", "enum": ["stable", "nightly"] },
+          "ffmpeg_channel": { "type": "string", "enum": ["stable", "nightly"] },
+          "favorite_themes": { "type": "array", "items": { "type": "string" } },
+          "random_theme_on_launch": { "type": "boolean" },
+          "random_theme_scope": { "type": "string", "enum": ["favorites", "all"] }
+        }
+      },
+      "UpdateVersions": {
+        "type": "object",
+        "properties": {
+          "ytdlp": {
+            "type": "object",
+            "properties": {
+              "current": { "type": "string" },
+              "latest": { "type": "string" },
+              "up_to_date": { "type": "boolean" },
+              "channel": { "type": "string" }
+            }
+          },
+          "ffmpeg": {
+            "type": "object",
+            "properties": {
+              "current": { "type": "string" },
+              "latest": { "type": "string" },
+              "up_to_date": { "type": "boolean" },
+              "channel": { "type": "string" }
+            }
+          },
+          "mutagen": {
+            "type": "object",
+            "properties": {
+              "current": { "type": "string" },
+              "latest": { "type": "string" },
+              "up_to_date": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "ComponentVersions": {
+        "type": "object",
+        "properties": {
+          "ytdlp": {
+            "type": "object",
+            "properties": {
+              "current": { "type": "string" },
+              "latest": { "type": "string" },
+              "up_to_date": { "type": "boolean" }
+            }
+          },
+          "ffmpeg": {
+            "type": "object",
+            "properties": {
+              "current": { "type": "string" },
+              "latest": { "type": "string" },
+              "up_to_date": { "type": "boolean" }
+            }
+          },
+          "mutagen": {
+            "type": "object",
+            "properties": {
+              "current": { "type": "string" },
+              "latest": { "type": "string" },
+              "up_to_date": { "type": "boolean" }
+            }
+          },
+          "deno": {
+            "type": "object",
+            "properties": {
+              "installed": { "type": "boolean" },
+              "version": { "type": "string" }
+            }
+          }
+        }
+      },
+      "UpdateStatus": {
+        "type": "object",
+        "properties": {
+          "running": { "type": "boolean" },
+          "log": { "type": "array", "items": { "type": "string" } },
+          "done": { "type": "boolean" },
+          "error": { "type": "string" }
+        }
+      },
+      "CookiesStatus": {
+        "type": "object",
+        "properties": {
+          "active": { "type": "boolean" },
+          "path": { "type": "string" },
+          "age_days": { "type": "integer" }
+        }
+      },
+      "DenoStatus": {
+        "type": "object",
+        "properties": {
+          "installed": { "type": "boolean" },
+          "version": { "type": "string" }
+        }
+      },
+      "PortableStatus": {
+        "type": "object",
+        "properties": {
+          "portable": { "type": "boolean" },
+          "data_dir": { "type": "string" }
+        }
+      },
+      "WhatsNew": {
+        "type": "object",
+        "properties": {
+          "version": { "type": "string" },
+          "notes_list": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "AppUpdate": {
+        "type": "object",
+        "properties": {
+          "up_to_date": { "type": "boolean" },
+          "current_version": { "type": "string" },
+          "current_build": { "type": "integer" },
+          "latest_version": { "type": "string" },
+          "latest_build": { "type": "integer" },
+          "notes": { "type": "string" },
+          "download": { "type": "string" },
+          "zip_url": { "type": "string" },
+          "_checksums": { "type": "object" },
+          "portable": { "type": "boolean" }
+        }
+      },
+      "UpdateDownloadResult": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "installer_path": { "type": "string" },
+          "error": { "type": "string" }
+        }
+      },
+      "CacheClearResult": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" },
+          "cleared": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "HistoryEntry": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "url": { "type": "string" },
+          "title": { "type": "string" },
+          "filename": { "type": "string" },
+          "format": { "type": "string" },
+          "download_dir": { "type": "string" },
+          "file_path": { "type": "string" },
+          "size_bytes": { "type": "integer" },
+          "completed_at": { "type": "string", "format": "date-time" },
+          "thumbnail": { "type": "string" }
+        }
+      },
+      "HistoryPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/HistoryEntry" }
+          },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "pages": { "type": "integer" },
+          "per_page": { "type": "integer" }
+        }
+      },
+      "OkResponse": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/info": {
+      "post": {
+        "summary": "Get video metadata and available formats",
+        "operationId": "getVideoInfo",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url"],
+                "properties": {
+                  "url": { "type": "string", "description": "Video URL (http/https)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Video metadata with format list",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/VideoInfo" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error (invalid URL, no metadata, timeout)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/playlist": {
+      "post": {
+        "summary": "Get playlist entries (flat listing)",
+        "operationId": "getPlaylist",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url"],
+                "properties": {
+                  "url": { "type": "string", "description": "Playlist/Channel URL" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Playlist metadata and entries (is_playlist=false if not a playlist)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PlaylistResult" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/download": {
+      "post": {
+        "summary": "Start a download job",
+        "operationId": "startDownload",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["url"],
+                "properties": {
+                  "url": { "type": "string", "description": "Media URL to download" },
+                  "download_dir": { "type": "string", "description": "Output directory (defaults to last used or home)" },
+                  "format": { "type": "string", "enum": ["video", "audio"], "description": "Media type" },
+                  "format_id": { "type": "string", "description": "yt-dlp format selector (e.g. 'bestvideo[height<=1080]+bestaudio')" },
+                  "audio_quality": { "type": "string", "description": "For audio: '128', '192', '320', 'flac', 'm4a_NNN', 'opus_NNN'" },
+                  "audio_codec": { "type": "string", "description": "Audio codec hint for stream copy" },
+                  "concurrent_fragments": { "type": "integer", "minimum": 1, "maximum": 16, "description": "Parallel fragment downloads" },
+                  "video_height": { "type": "integer", "enum": [360, 480, 720, 1080, 1440, 2160, 4320], "description": "Max video height" },
+                  "subtitles": { "type": "boolean", "description": "Embed English subtitles" },
+                  "embed_metadata": { "type": "boolean", "description": "Embed metadata/thumbnails" },
+                  "output_format": { "type": "string", "enum": ["mp4", "mkv"], "description": "Output container" },
+                  "title": { "type": "string", "description": "Video title (for display)" },
+                  "thumbnail": { "type": "string", "description": "Thumbnail URL (for display)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Job created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DownloadJob" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many jobs",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cancel/{job_id}": {
+      "post": {
+        "summary": "Cancel an active download job",
+        "operationId": "cancelDownload",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cancel initiated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Job not in a cancellable state",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/status/{job_id}": {
+      "get": {
+        "summary": "Poll download job status",
+        "operationId": "getJobStatus",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current job status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/JobStatus" }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "summary": "Get current settings",
+        "operationId": "getSettings",
+        "responses": {
+          "200": {
+            "description": "Settings object",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Settings" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/save": {
+      "post": {
+        "summary": "Save settings (partial update)",
+        "operationId": "saveSettings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "Partial settings object (only allowed keys are persisted)"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settings saved",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OkResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/reset": {
+      "post": {
+        "summary": "Reset all settings to defaults",
+        "operationId": "resetSettings",
+        "responses": {
+          "200": {
+            "description": "Settings reset",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OkResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/open-folder": {
+      "post": {
+        "summary": "Open a folder in the system file explorer",
+        "operationId": "openFolder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "folder": { "type": "string", "description": "Path to folder (defaults to last used)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Folder opened or explorer launched",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SuccessResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Folder not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rename": {
+      "post": {
+        "summary": "Rename a completed download file",
+        "operationId": "renameFile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["job_id", "name"],
+                "properties": {
+                  "job_id": { "type": "string" },
+                  "name": { "type": "string", "description": "New filename (without extension)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "File renamed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "filename": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing parameters",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not complete or file not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/check-updates": {
+      "get": {
+        "summary": "Check for component updates (yt-dlp, ffmpeg, mutagen)",
+        "operationId": "checkUpdates",
+        "responses": {
+          "200": {
+            "description": "Version info for all components",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UpdateVersions" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/run-update": {
+      "post": {
+        "summary": "Trigger component updates",
+        "operationId": "runUpdate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ytdlp": { "type": "boolean", "description": "Update yt-dlp" },
+                  "ffmpeg": { "type": "boolean", "description": "Update ffmpeg" },
+                  "mutagen": { "type": "boolean", "description": "Update mutagen" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Update started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "started": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Update already running",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/update-status": {
+      "get": {
+        "summary": "Poll component update progress",
+        "operationId": "getUpdateStatus",
+        "responses": {
+          "200": {
+            "description": "Update progress",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UpdateStatus" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/installed-versions": {
+      "get": {
+        "summary": "Get locally installed component versions (no network)",
+        "operationId": "getInstalledVersions",
+        "responses": {
+          "200": {
+            "description": "Installed versions",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ComponentVersions" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cookies/status": {
+      "get": {
+        "summary": "Check if cookies.txt is present",
+        "operationId": "getCookiesStatus",
+        "responses": {
+          "200": {
+            "description": "Cookies status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CookiesStatus" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cookies/save": {
+      "post": {
+        "summary": "Save cookies.txt content",
+        "operationId": "saveCookies",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["content"],
+                "properties": {
+                  "content": { "type": "string", "description": "Netscape-format cookies text" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cookies saved",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OkResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "No content provided",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "413": {
+            "description": "File too large (>1MB)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cookies/clear": {
+      "post": {
+        "summary": "Clear cookies.txt",
+        "operationId": "clearCookies",
+        "responses": {
+          "200": {
+            "description": "Cookies cleared",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OkResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deno/status": {
+      "get": {
+        "summary": "Check Deno runtime status",
+        "operationId": "getDenoStatus",
+        "responses": {
+          "200": {
+            "description": "Deno install status",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DenoStatus" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deno/install": {
+      "post": {
+        "summary": "Install Deno runtime (async)",
+        "operationId": "installDeno",
+        "responses": {
+          "200": {
+            "description": "Install started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "started": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Install already running or Deno already installed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deno/install-status": {
+      "get": {
+        "summary": "Poll Deno install progress",
+        "operationId": "getDenoInstallStatus",
+        "responses": {
+          "200": {
+            "description": "Install progress",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UpdateStatus" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deno/reinstall": {
+      "post": {
+        "summary": "Delete Deno binary so it re-installs on next request",
+        "operationId": "reinstallDeno",
+        "responses": {
+          "200": {
+            "description": "Deno binary removed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OkResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/portable-status": {
+      "get": {
+        "summary": "Check if running in portable mode",
+        "operationId": "getPortableStatus",
+        "responses": {
+          "200": {
+            "description": "Portable mode info",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PortableStatus" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/whats-new": {
+      "get": {
+        "summary": "Get release notes from update server",
+        "operationId": "getWhatsNew",
+        "responses": {
+          "200": {
+            "description": "Release notes",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WhatsNew" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/check-app-update": {
+      "get": {
+        "summary": "Check for app update (signed manifest)",
+        "operationId": "checkAppUpdate",
+        "responses": {
+          "200": {
+            "description": "App update info",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AppUpdate" }
+              }
+            }
+          },
+          "502": {
+            "description": "Manifest verification failed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "503": {
+            "description": "Update server unreachable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/download-update": {
+      "post": {
+        "summary": "Download and extract app update installer",
+        "operationId": "downloadAppUpdate",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "zip_url": { "type": "string", "description": "Update zip URL" },
+                  "expected_checksum": { "type": "string", "description": "Expected SHA-256 checksum" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Installer downloaded and extracted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UpdateDownloadResult" }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or portable mode",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Checksum or extraction failure",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cache/clear": {
+      "post": {
+        "summary": "Clear temp update files and orphaned partial downloads",
+        "operationId": "clearCache",
+        "responses": {
+          "200": {
+            "description": "Cache cleared",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CacheClearResult" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/history": {
+      "get": {
+        "summary": "Get paginated download history",
+        "operationId": "getHistory",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10, "maximum": 500 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated history",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HistoryPage" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/history/{entry_id}": {
+      "delete": {
+        "summary": "Delete a single history entry",
+        "operationId": "deleteHistoryEntry",
+        "parameters": [
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entry deleted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OkResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/history/clear": {
+      "post": {
+        "summary": "Clear all download history",
+        "operationId": "clearHistory",
+        "responses": {
+          "200": {
+            "description": "History cleared",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OkResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/history/import": {
+      "post": {
+        "summary": "Import/Replace history with provided list",
+        "operationId": "importHistory",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "History imported",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "count": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/thumbnail/{filename}": {
+      "get": {
+        "summary": "Serve a cached thumbnail image",
+        "operationId": "getThumbnail",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9\\-]+\\.(jpg|png|webp)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thumbnail image (JPEG/PNG/WebP)",
+            "content": {
+              "image/jpeg": {},
+              "image/png": {},
+              "image/webp": {}
+            }
+          },
+          "404": {
+            "description": "Thumbnail not found"
+          }
+        }
+      }
+    },
+    "/api/shutdown": {
+      "post": {
+        "summary": "Gracefully shut down the server (kills active downloads first)",
+        "operationId": "shutdown",
+        "responses": {
+          "200": {
+            "description": "Shutdown initiated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OkResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

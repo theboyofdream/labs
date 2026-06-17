@@ -1,0 +1,31 @@
+{
+  "version": "1.0.5",
+  "build": 129,
+  "channel": "stable",
+  "date": "6/15/2026",
+  "time": "12:16 AM EST",
+  "platforms": {
+    "windows": {
+      "installer": "egm-setup.exe",
+      "zip": "EGMd.zip",
+      "downloadUrl": "https://egerena.com/apps/EGMd.zip",
+      "updateJson": "egm-version.json"
+    },
+    "windows-portable": {
+      "zip": "EGMd-portable.zip",
+      "downloadUrl": "https://egerena.com/apps/EGMd-portable.zip",
+      "updateJson": "egm-portable-version.json"
+    },
+    "mac": {
+      "zip": "EGMdM.zip",
+      "downloadUrl": "https://egerena.com/apps/EGMdM.zip",
+      "updateJson": "egmac-update.json"
+    },
+    "linux": {
+      "zip": "EGMdL.zip",
+      "downloadUrl": "https://egerena.com/apps/EGMdL.zip",
+      "updateJson": "egmlinux-update.json"
+    }
+  },
+  "buildDate": "6/8/2026 12:00 PM EST"
+}
