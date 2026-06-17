@@ -1,0 +1,27 @@
+:root {
+  --bg: #fff;
+  --text: #2D3142;
+  --border: #ADACB5;
+  --muted: #D8D5DB;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #2D3142;
+    --text: #D8D5DB;
+    --border: #ADACB5;
+    --muted: #ADACB5;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+a {
+  color: inherit;
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@newsletters/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "biome check src/",
+    "format": "biome format --write src/"
+  },
+  "dependencies": {
+    "preact": "^10.26.0",
+    "wouter": "^3.3.5"
+  },
+  "devDependencies": {
+    "@newsletters/types": "workspace:*",
+    "@preact/preset-vite": "^2.10.0",
+    "vite": "^6.0.0"
+  }
+}

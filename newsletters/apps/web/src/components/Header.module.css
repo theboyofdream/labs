@@ -1,0 +1,28 @@
+.nav {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.logo {
+  margin-right: auto;
+}
+
+.links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logout {
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+}

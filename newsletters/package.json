@@ -1,0 +1,19 @@
+{
+  "name": "newsletters",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "biome check .",
+    "lint:fix": "biome check --apply .",
+    "format": "biome format --write ."
+  },
+  "packageManager": "pnpm@10.8.1",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.18"
+  }
+}
