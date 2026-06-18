@@ -7,7 +7,13 @@ import { digestRoutes } from "./routes/digests.js";
 import { setupCron } from "./cron/index.js";
 
 const app = new Elysia()
-  .use(cors())
+  .use(
+    cors({
+      origin: process.env.FRONTEND_URL ?? "http://localhost:5173",
+      credentials: true,
+      allowedHeaders: ["Authorization", "Content-Type"],
+    }),
+  )
   .group("/api", (api) =>
     api
       .use(authRoutes)

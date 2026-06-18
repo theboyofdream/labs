@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { nanoid } from "nanoid";
 import { db } from "../db/index.js";
-import { authMiddleware } from "../middleware/auth.js";
+import { authMiddleware, createToken } from "../middleware/auth.js";
 
 export const authRoutes = new Elysia()
   .use(authMiddleware)
@@ -40,19 +40,27 @@ export const authRoutes = new Elysia()
       db.run("INSERT INTO user_settings (user_id) VALUES (?)", [userId]);
     }
 
-    const token = nanoid(64);
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    // Create PASETO token
+    const pasetoToken = await createToken({
+      sub: userId,
+      role: existing?.role ?? "user",
+      exp: expiresAt.toISOString(),
+    });
+
+    // Store in DB for revocation support
     db.run("INSERT INTO sessions (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)", [
       nanoid(),
       userId,
-      token,
-      expiresAt,
+      pasetoToken,
+      expiresAt.toISOString(),
     ]);
 
     return {
       ok: true,
       data: {
-        token,
+        token: pasetoToken,
         user: {
           id: userId,
           email: payload.email,
