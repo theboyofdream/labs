@@ -11,8 +11,6 @@ export function DefaultLayout({ children }) {
         <nav class={styles.nav}>
           <Link href="/" class={styles.logo}>Newsletters</Link>
           <div class={styles.links}>
-            <Link href="/privacy">Privacy</Link>
-            <Link href="/terms">Terms</Link>
             {user ? (
               <Link href="/dashboard">Dashboard</Link>
             ) : (
@@ -23,7 +21,11 @@ export function DefaultLayout({ children }) {
       </header>
       <main class={styles.main}>{children}</main>
       <footer class={styles.footer}>
-        <p>&copy; {new Date().getFullYear()} Newsletters</p>
+        <div class={styles.footerLinks}>
+          <Link href="/privacy">Privacy Policy</Link>
+          <Link href="/terms">Terms of Use</Link>
+        </div>
+        <p class={styles.copyright}>&copy; {new Date().getFullYear()} Newsletters</p>
       </footer>
     </div>
   );

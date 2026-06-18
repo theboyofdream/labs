@@ -27,6 +27,20 @@
 }
 
 .footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 1.5rem 2rem;
-  text-align: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.footerLinks {
+  display: flex;
+  gap: 1rem;
+}
+
+.copyright {
+  margin: 0;
 }
